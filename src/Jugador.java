@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -68,7 +69,7 @@ public class Jugador {
         return mensaje;
     }
     public String getEscaleras() {
-    String mensaje = "No se encontraron escaleras.";
+    StringBuilder mensaje = new StringBuilder();
     // Listas separadas por pinta
     List<NombreCarta> treboles = new ArrayList<>();
     List<NombreCarta> picas = new ArrayList<>();
@@ -97,11 +98,14 @@ public class Jugador {
                        buscarEscaleras(corazones, Pinta.CORAZON) +
                        buscarEscaleras(diamantes, Pinta.DIAMANTE);
 
-    if (!resultado.isEmpty()) {
-        mensaje = "Se encontraron las siguientes escaleras:\n" + resultado;
+    if (!resultado.isBlank()) {
+    mensaje.append("<html><b>Se encontraron las siguientes escaleras:</b><br><br></html>");
+    mensaje.append(resultado);
+    } else {
+        mensaje.append("No se encontraron escaleras.");
     }
-
-    return mensaje;
+  
+    return mensaje.toString();
 }
 public String buscarEscaleras(List<NombreCarta> cartas, Pinta pinta) {
 
@@ -145,8 +149,8 @@ private String mostrarEscalera(List<NombreCarta> secuencia, Pinta pinta) {
            secuencia + "</html>\n";
 
 }
-public List<NombreCarta> getCartasEnGrupos() {
-    List<NombreCarta> cartasEnGrupos = new ArrayList<>();
+public List<Carta> getCartasEnGrupos() {
+    List<Carta> cartasEnGrupos = new ArrayList<>();
     int[] contadores = new int[NombreCarta.values().length];
     for (Carta c : cartas) {
         contadores[c.getNombre().ordinal()]++;
@@ -159,29 +163,30 @@ public List<NombreCarta> getCartasEnGrupos() {
         }
     }
     if (hayGrupos){
-        for (int i = 0; i < contadores.length; i++) {
-            if (contadores[i] > 1) { 
-                cartasEnGrupos.add(NombreCarta.values()[i]);
+        for (Carta c : cartas) {
+            if (contadores[c.getNombre().ordinal()] > 1 && !cartasEnGrupos.contains(c)) {
+                cartasEnGrupos.add(c);
             }
         }
     }
     return cartasEnGrupos;
 }
-private List<NombreCarta> getCartasPorPinta(Pinta pinta) {
-    List<NombreCarta> cartasPinta = new ArrayList<>();
+private List<Carta> getCartasPorPinta(Pinta pinta) {
+    List<Carta> cartasPinta = new ArrayList<>();
     for (Carta c : cartas) {
         if (c.getPinta() == pinta) {
-            cartasPinta.add(c.getNombre());
+            cartasPinta.add(c);
         }
     }
+    cartasPinta.sort(Comparator.comparingInt(c -> c.getNombre().ordinal()));
     return cartasPinta;
 }
-public List<NombreCarta> getCartasEnEscaleras(List<NombreCarta> cartas, Pinta pinta) {
-    List<NombreCarta> secuencia = new ArrayList<>();
-    List<NombreCarta> resultado = new ArrayList<>();
+public List<Carta> getCartasEnEscaleras(List<Carta> cartas, Pinta pinta) {
+    List<Carta> secuencia = new ArrayList<>();
+    List<Carta> resultado = new ArrayList<>();
     
     for (int i = 0; i < cartas.size(); i++) {
-        if (i == 0 || cartas.get(i).ordinal() == cartas.get(i - 1).ordinal() + 1) {
+        if (i == 0 || cartas.get(i).getNombre().ordinal() == cartas.get(i - 1).getNombre().ordinal() + 1) {
             secuencia.add(cartas.get(i));
         } else {
             if (secuencia.size() >= 3) {
@@ -200,16 +205,16 @@ public List<NombreCarta> getCartasEnEscaleras(List<NombreCarta> cartas, Pinta pi
 }
 
 
-public List<NombreCarta> getSinGrupos() {
-    List<NombreCarta> sinGrupos = new ArrayList<>();
-    List<NombreCarta> cartasEnGrupos = getCartasEnGrupos();
-    List<NombreCarta> cartasEnEscaleras = new ArrayList<>();
+public List<Carta> getSinGrupos() {
+    List<Carta> sinGrupos = new ArrayList<>();
+    List<Carta> cartasEnGrupos = getCartasEnGrupos();
+    List<Carta> cartasEnEscaleras = new ArrayList<>();
     for (Pinta pinta : Pinta.values()) {
         cartasEnEscaleras.addAll(getCartasEnEscaleras(getCartasPorPinta(pinta), pinta));
     }
     for (Carta c : cartas) {
-        if (!cartasEnEscaleras.contains(c.getNombre()) && !cartasEnGrupos.contains(c.getNombre())) {
-            sinGrupos.add(c.getNombre());
+        if (!cartasEnEscaleras.contains(c) && !cartasEnGrupos.contains(c)) {
+            sinGrupos.add(c);
         }
     }
 
@@ -220,13 +225,13 @@ public List<NombreCarta> getSinGrupos() {
 
 
 public int calcularPuntaje() {
-    List<NombreCarta> cartassingrupos = getSinGrupos();
+    List<Carta> cartassingrupos = getSinGrupos();
     int puntaje = 0;
 
-    for (NombreCarta carta : cartassingrupos) {
-        switch (carta) {
+    for (Carta carta : cartassingrupos) {
+        switch (carta.getNombre()) {
             case AS, JACK, QUEEN, KING -> puntaje += 10;  // As y figuras valen 10
-            default -> puntaje += carta.ordinal() + 1;  // El resto vale su número (ordinal + 1)
+            default -> puntaje += carta.getNombre().ordinal() + 1;  // El resto vale su número (ordinal + 1)
         }
     }
 
